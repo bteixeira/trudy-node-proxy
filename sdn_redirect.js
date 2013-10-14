@@ -137,6 +137,7 @@ var server = http.createServer(function(request, response) {
 		} else {
 			log('\t\tStatus:\t' + status);
 		}
+		entry.status = status;
 		/*
 		console.log('HEADERS:\n');
 		for (h in res.headers) {
@@ -224,10 +225,10 @@ var historyServer = http.createServer(function(request, response) {
 	var entry;
 	if (!path) {
 		//response.end('hi there -- no path');
-		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Path</th><th>Data</th></tr>');
+		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Path</th><th>Status</th><th>Data</th></tr>');
 		for (var i = 0 ; i < history.length ; i++) {
 			entry = history[i];
-			response.write('<tr><td>' + entry.time + '</td><td>' + entry.origin + '</td><td>' + entry.method + '</td><td>' + entry.host + '</td><td>' + entry.path + '</td><td><a href="' + i + '">View</a></td></tr>');
+			response.write('<tr><td>' + entry.time + '</td><td>' + entry.origin + '</td><td>' + entry.method + '</td><td>' + entry.host + '</td><td>' + entry.path + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td></tr>');
 		}
 		response.write('</table>');
 	} else {
