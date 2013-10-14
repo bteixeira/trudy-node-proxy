@@ -2,7 +2,6 @@ var http = require('http');
 var url = require('url');
 var qs = require('querystring');
 
-
 var mappings = {
 
 //	'web/js/jquery-1.7.1.min.js'
@@ -30,6 +29,28 @@ function shrink(what, length) {
 	var left = what.substr(0, length / 2);
 	var right = what.substr(what.length - length / 2 + 1);
 	return left + '⋯' + right;
+}
+
+function dateFormat (date, fstr, utc) {
+	utc = utc ? 'getUTC' : 'get';
+	return fstr.replace(/%[YmdHMSl]/g, function (m) {
+		switch (m) {
+			case '%Y': return date[utc + 'FullYear'] (); // no leading zeros required
+			case '%m': m = 1 + date[utc + 'Month'] (); break;
+			case '%d': m = date[utc + 'Date'] (); break;
+			case '%H': m = date[utc + 'Hours'] (); break;
+			case '%M': m = date[utc + 'Minutes'] (); break;
+			case '%S': m = date[utc + 'Seconds'] (); break;
+			case '%l': var l = date[utc + 'Milliseconds'] (); return l < 100 ? '0' + l : l;
+			default: return m.slice (1); // unknown code, remove %
+		}
+		// add leading zero if required
+		return ('0' + m).slice (-2);
+	});
+}
+
+function fmt(time) {
+	return dateFormat(time, '%H:%M:%S,%l');
 }
 
 history = [];
@@ -221,25 +242,28 @@ var historyServer = http.createServer(function(request, response) {
 	console.log('History request');
 	response.writeHead(200, {'Content-Type': 'text/html'});
 	var path = url.parse(request.url).path.substr(1);
-	response.write('<!DOCTYPE html><head><style>td { border: 1px solid gray; } </style></head><body>');
+	response.write('<!DOCTYPE html><head> <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script><script>$(function(){$(\'#clear\').click(function(ev){ev.preventDefault();$.ajax(\'clear\');})})</script><style>td { border: 1px solid gray; } body { white-space: pre; font-family: monospace; } table { width: 100%; } td.wrap {white-space: normal; word-wrap: break-word; } </style></head><body>');
 	var entry;
 	if (!path) {
 		//response.end('hi there -- no path');
-		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Path</th><th>Status</th><th>Data</th></tr>');
+		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Status</th><th>Data</th><th>Path</th></tr>');
 		for (var i = 0 ; i < history.length ; i++) {
 			entry = history[i];
-			response.write('<tr><td>' + entry.time + '</td><td>' + entry.origin + '</td><td>' + entry.method + '</td><td>' + entry.host + '</td><td>' + entry.path + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td></tr>');
+			response.write('<tr><td>' + fmt(entry.time) + '</td><td>' + entry.origin + '</td><td>' + entry.method + '</td><td>' + entry.host + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td><td>' + entry.path + '</td></tr>');
 		}
 		response.write('</table>');
 	} else {
 		//response.write('hi there -- path is ' + path + ' [' + typeof path + ']');
 		//console.log
+		if (path === 'clear') {
+			history = [];
+		}
 		if (history[path]) {
 			//response.write('' + history[path].time);
 			response.write('' + history[path].data);
 		}
 	}
-	response.end('</body>');
+	response.end('<a id="clear" href="clear">Clear</a></body>');
 }).listen(9002, function() {
 	console.log('History available');
 });
