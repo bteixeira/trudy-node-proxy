@@ -32,7 +32,19 @@ function shrink(what, length) {
 	return left + '⋯' + right;
 }
 
+history = [];
+
 var server = http.createServer(function(request, response) {
+
+	var entry = {
+		time: new Date(),
+		origin: request.connection.remoteAddress,
+		method: request.method,
+		host: request.headers.host,
+		path: url.parse(request.url).path,
+		data: ''
+	};
+	history.push(entry);
 
 	var n = i++;
 	function log() {
@@ -149,6 +161,7 @@ var server = http.createServer(function(request, response) {
 			//log('\t\tData for:\t' + request.headers.host);
 			//log('\t\t%%%%%', chunk);
 			var str = chunk.toString();
+			entry.data += str;
 			//log('\t\t%%%%%', str.substr(0, 120));
 			/**/
 			if (str.indexOf('integration') !== -1) {
@@ -202,3 +215,31 @@ server.listen(port, function() {
 	console.log(msg);
 	console.log('Ready on port ' + port);
 });
+
+var historyServer = http.createServer(function(request, response) {
+	console.log('History request');
+	response.writeHead(200, {'Content-Type': 'text/html'});
+	var path = url.parse(request.url).path.substr(1);
+	response.write('<!DOCTYPE html><head><style>td { border: 1px solid gray; } </style></head><body>');
+	var entry;
+	if (!path) {
+		//response.end('hi there -- no path');
+		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Path</th><th>Data</th></tr>');
+		for (var i = 0 ; i < history.length ; i++) {
+			entry = history[i];
+			response.write('<tr><td>' + entry.time + '</td><td>' + entry.origin + '</td><td>' + entry.method + '</td><td>' + entry.host + '</td><td>' + entry.path + '</td><td><a href="' + i + '">View</a></td></tr>');
+		}
+		response.write('</table>');
+	} else {
+		//response.write('hi there -- path is ' + path + ' [' + typeof path + ']');
+		//console.log
+		if (history[path]) {
+			//response.write('' + history[path].time);
+			response.write('' + history[path].data);
+		}
+	}
+	response.end('</body>');
+}).listen(9002, function() {
+	console.log('History available');
+});
+
