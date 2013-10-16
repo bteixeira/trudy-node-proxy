@@ -1,4 +1,4 @@
-var http = require('http');
+﻿var http = require('http');
 var url = require('url');
 var qs = require('querystring');
 
@@ -12,8 +12,14 @@ var mappings = {
 //'shop/soft/login': ['www.zalando.de-local', 8080, '/shop/soft/login']
 };
 
-//mappings['frames/form'] = 					['localhost', 8081, '/creditcard-gateway/frames/form'];
-//mappings['frames/js/zal.cc-iframe.js'] = 	['localhost', 8081, '/creditcard-gateway/frames/js/zal.cc-iframe.js'];
+mappings['frames/form'] = 							['localhost', 8081, '/creditcard-gateway/frames/form'];
+mappings['frames/css/pci.css'] =					['localhost', 8081, '/creditcard-gateway/frames/css/pci.css'];
+mappings['frames/js/jquery-1.7.1.min.js'] =	 		['localhost', 8081, '/creditcard-gateway/frames/js/jquery-1.7.1.min.js'];
+mappings['frames/js/jquery.validate.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/jquery.validate.js'];
+mappings['frames/js/jquery.ba-postmessage.js'] =	['localhost', 8081, '/creditcard-gateway/frames/js/jquery.ba-postmessage.js'];
+mappings['frames/js/zal.cc-iframe.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/zal.cc-iframe.js'];
+mappings['frames/img/sprite.png'] = 				['localhost', 8081, '/creditcard-gateway/frames/img/sprite.png'];
+
 //mappings['api/mobile/v2'] = 	['www.zalando.de-local', 8080, '/api/mobile/v2'];
 
 /* Filters for full dumping (but no changing) */
@@ -93,8 +99,9 @@ var server = http.createServer(function(request, response) {
 			body += data;
 		});
 		request.on('end', function () {
-			var POST = qs.parse(body);
-			log(POST);
+			var post = qs.parse(body);
+			entry.post = post;
+			log(post);
 		});
 	}
 	var items;
@@ -231,7 +238,8 @@ var port = 9001;
 
 server.listen(port, function() {
 	var messages = [
-			'Shields up, weapons online.'
+			'Shields up, weapons online.',
+			'It\'s time to kick ass and chew bubble gum.\nAnd I\'m all out of gum.'
 	];
 	var msg = messages[Math.floor(Math.random() * messages.length)];
 	console.log(msg);
@@ -248,22 +256,35 @@ var historyServer = http.createServer(function(request, response) {
 		//response.end('hi there -- no path');
 		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Status</th><th>Data</th><th>Path</th></tr>');
 		for (var i = 0 ; i < history.length ; i++) {
+			
 			entry = history[i];
-			response.write('<tr><td>' + fmt(entry.time) + '</td><td>' + entry.origin + '</td><td>' + entry.method + '</td><td>' + entry.host + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td><td>' + entry.path + '</td></tr>');
+			response.write('<tr><td>' + fmt(entry.time) + '</td><td>' + entry.origin + '</td><td>' +
+			
+			(entry.method === 'POST' ? '<a href="post/' + i + '">POST</a>' : entry.method) +
+			
+			'</td><td>' + entry.host + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td><td>' + entry.path + '</td></tr>');
 		}
-		response.write('</table>');
+		response.write('</table><a id="clear" href="clear">Clear</a>');
 	} else {
 		//response.write('hi there -- path is ' + path + ' [' + typeof path + ']');
 		//console.log
 		if (path === 'clear') {
 			history = [];
 		}
+		if (path.indexOf('post') === 0) {
+			response.write('<table>');
+			var post = history[path.substr(5)].post;
+			for (var p in post) {
+				response.write('<tr><th>' + p + '</th><td>' + post[p] + '</td></tr>');
+			}
+			response.write('</table>');
+		}
 		if (history[path]) {
 			//response.write('' + history[path].time);
-			response.write('' + history[path].data);
+			response.write('' + history[path].data.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
 		}
 	}
-	response.end('<a id="clear" href="clear">Clear</a></body>');
+	response.end('</body>');
 }).listen(9002, function() {
 	console.log('History available');
 });
