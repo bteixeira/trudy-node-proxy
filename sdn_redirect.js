@@ -239,11 +239,23 @@ var port = 9001;
 server.listen(port, function() {
 	var messages = [
 			'Shields up, weapons online.',
-			'It\'s time to kick ass and chew bubble gum.\nAnd I\'m all out of gum.'
+			'It\'s time to kick ass and chew bubble gum.\nAnd I\'m all out of gum.',
+			'This is a local proxy for local people. There\'s nothing for you here.'
 	];
 	var msg = messages[Math.floor(Math.random() * messages.length)];
-	console.log(msg);
-	console.log('Ready on port ' + port);
+	console.log(msg + '\n');
+	console.log('Ready on port ' + port + (port > 9000 ? ' (over nine thousand)' : ''));
+	var os = require('os');
+	var ifaces = os.networkInterfaces();
+	for (var dev in ifaces) {
+		var alias = 0;
+		ifaces[dev].forEach(function (details) {
+			if (details.family === 'IPv4' && details.address !== '127.0.0.1') {
+				console.log('Local address ' + dev + (alias ? ':' + alias : ''), details.address);
+				++alias;
+			}
+		});
+	}
 });
 
 var historyServer = http.createServer(function(request, response) {
@@ -286,6 +298,6 @@ var historyServer = http.createServer(function(request, response) {
 	}
 	response.end('</body>');
 }).listen(9002, function() {
-	console.log('History available');
+	console.log('History available\n');
 });
 
