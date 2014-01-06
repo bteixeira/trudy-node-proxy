@@ -234,9 +234,9 @@ server.on('connect', function(socket) {
 	//console.log('XXX CONNECT!!!');
 });
 
-var port = 9001;
+var PORT = 9001;
 
-server.listen(port, function() {
+server.listen(PORT, function() {
 	var messages = [
 			'Shields up, weapons online.',
 			'It\'s time to kick ass and chew bubble gum.\nAnd I\'m all out of gum.',
@@ -244,7 +244,7 @@ server.listen(port, function() {
 	];
 	var msg = messages[Math.floor(Math.random() * messages.length)];
 	console.log(msg + '\n');
-	console.log('Ready on port ' + port + (port > 9000 ? ' (over nine thousand)' : ''));
+	console.log('Ready on port ' + PORT + (PORT > 9000 ? ' (over nine thousand)' : ''));
 	var os = require('os');
 	var ifaces = os.networkInterfaces();
 	for (var dev in ifaces) {
@@ -257,6 +257,8 @@ server.listen(port, function() {
 		});
 	}
 });
+
+var PORT_HISTORY = 9002;
 
 var historyServer = http.createServer(function(request, response) {
 	console.log('History request');
@@ -297,7 +299,6 @@ var historyServer = http.createServer(function(request, response) {
 		}
 	}
 	response.end('</body>');
-}).listen(9002, function() {
-	console.log('History available\n');
+}).listen(PORT_HISTORY, function() {
+	console.log('History available on port ' + PORT_HISTORY + '\n');
 });
-
