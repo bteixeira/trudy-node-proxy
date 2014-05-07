@@ -69,7 +69,8 @@ var server = http.createServer(function(request, response) {
 		method: request.method,
 		host: request.headers.host,
 		path: url.parse(request.url).path,
-		data: ''
+		data: '',
+        requestHeaders: request.headers
 	};
 	history.push(entry);
 
@@ -178,11 +179,7 @@ var server = http.createServer(function(request, response) {
 		
 		
 		//response.writeHead(200, {'Content-Type': 'text/plain'});
-		for (h in proxy_response.headers) {
-			if (proxy_response.headers.hasOwnProperty(h)) {
-				//console.log('\t' + h + ':\t\t' + proxy_response.headers[h]);
-			}
-		}
+        entry.responseHeaders = proxy_response.headers;
 		response.writeHead(status, proxy_response.headers);
 		
 		proxy_response.on('data', function (chunk) {
@@ -268,7 +265,7 @@ var historyServer = http.createServer(function(request, response) {
 	var entry;
 	if (!path) {
 		//response.end('hi there -- no path');
-		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Status</th><th>Data</th><th>Path</th></tr>');
+		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Status</th><th>Data</th><th>Headers</th><th>Path</th></tr>');
 		for (var i = 0 ; i < history.length ; i++) {
 			
 			entry = history[i];
@@ -276,7 +273,8 @@ var historyServer = http.createServer(function(request, response) {
 			
 			(entry.method === 'POST' ? '<a href="post/' + i + '">POST</a>' : entry.method) +
 			
-			'</td><td>' + entry.host + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td><td>' + entry.path + '</td></tr>');
+			'</td><td>' + entry.host + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td><td><a href="headers/' + i + '">View</a></td>' +
+            '<td>' + entry.path + '</td></tr>');
 		}
 		response.write('</table><a id="clear" href="clear">Clear</a>');
 	} else {
@@ -284,16 +282,27 @@ var historyServer = http.createServer(function(request, response) {
 		//console.log
 		if (path === 'clear') {
 			history = [];
-		}
-		if (path.indexOf('post') === 0) {
+		} else if (path.indexOf('post') === 0) {
 			response.write('<table>');
 			var post = history[path.substr(5)].post;
 			for (var p in post) {
 				response.write('<tr><th>' + p + '</th><td>' + post[p] + '</td></tr>');
 			}
 			response.write('</table>');
-		}
-		if (history[path]) {
+		} else if (path.indexOf('headers') === 0) {
+            response.write('<h3>Request</h3><table>');
+            var headers = history[path.substr(8)].requestHeaders;
+            for (var h in headers) {
+                response.write('<tr><th>' + h + '</th><td>' + headers[h] + '</td></tr>');
+            }
+            response.write('</table>');
+            response.write('<h3>Response</h3><table>');
+            headers = history[path.substr(8)].responseHeaders;
+            for (h in headers) {
+                response.write('<tr><th>' + h + '</th><td>' + headers[h] + '</td></tr>');
+            }
+            response.write('</table>');
+        } else if (history[path]) {
 			//response.write('' + history[path].time);
 			response.write('' + history[path].data.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
 		}
