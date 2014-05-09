@@ -26,6 +26,8 @@ var server = http.createServer(function(request, response) {
 		console.log.apply(null, arguments);
 	}
 
+    log(request.connection.remoteAddress + '\t' + request.method + '\t' + request.headers.host + '\t' + url.parse(request.url).path);
+
 	request.on('data', function(data) {
 		proxy_request.write(data, 'binary');
 	});
@@ -34,7 +36,6 @@ var server = http.createServer(function(request, response) {
 		proxy_request.end();
 	});
 	
-	log(request.connection.remoteAddress + '\t' + request.method + '\t' + request.headers.host + '\t' + url.parse(request.url).path);
 	if (request.method === 'POST') {
 		var body = '';
 		request.on('data', function (data) {
