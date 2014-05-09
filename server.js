@@ -16,43 +16,6 @@ var mappings = {
 
 var i = 1000;
 
-/**
- * Shrinks a string to a certain length by taking out enough characters in the middle and replacing them with ellipsis
- * @param what the string to be shrinked
- * @param length the length to shrink to
- * @returns {*} ths shrinked string
- */
-function shrink(what, length) {
-	if (what.length <= length) {
-		return what;
-	}
-	var left = what.substr(0, length / 2);
-	var right = what.substr(what.length - length / 2 + 1);
-	return left + '⋯' + right;
-}
-
-function dateFormat (date, fstr, utc) {
-	utc = utc ? 'getUTC' : 'get';
-	return fstr.replace(/%[YmdHMSl]/g, function (m) {
-		switch (m) {
-			case '%Y': return date[utc + 'FullYear'] (); // no leading zeros required
-			case '%m': m = 1 + date[utc + 'Month'] (); break;
-			case '%d': m = date[utc + 'Date'] (); break;
-			case '%H': m = date[utc + 'Hours'] (); break;
-			case '%M': m = date[utc + 'Minutes'] (); break;
-			case '%S': m = date[utc + 'Seconds'] (); break;
-			case '%l': var l = date[utc + 'Milliseconds'] (); return l < 100 ? '0' + l : l;
-			default: return m.slice (1); // unknown code, remove %
-		}
-		// add leading zero if required
-		return ('0' + m).slice (-2);
-	});
-}
-
-function fmt(time) {
-	return dateFormat(time, '%H:%M:%S,%l');
-}
-
 var history = [];
 
 var server = http.createServer(function(request, response) {
@@ -177,7 +140,7 @@ server.listen(PORT, function() {
 	var messages = [
 			'Shields up, weapons online.',
 			'It\'s time to kick ass and chew bubble gum.\nAnd I\'m all out of gum.',
-			'This is a local proxy for local people. There\'s nothing for you here.'
+			'This is a local proxy for local people.\nThere\'s nothing for you here.'
 	];
 	var msg = messages[Math.floor(Math.random() * messages.length)];
 	console.log(msg + '\n');
@@ -196,54 +159,4 @@ server.listen(PORT, function() {
 });
 
 var PORT_HISTORY = 9002;
-
-var historyServer = http.createServer(function(request, response) {
-	console.log('History request');
-	response.writeHead(200, {'Content-Type': 'text/html'});
-	var path = url.parse(request.url).path.substr(1);
-	response.write('<!DOCTYPE html><head> <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script><script>$(function(){$(\'#clear\').click(function(ev){ev.preventDefault();$.ajax(\'clear\');})})</script><style>td { border: 1px solid gray; } body { white-space: pre; font-family: monospace; } table { width: 100%; } td.wrap {white-space: normal; word-wrap: break-word; } </style></head><body>');
-	var entry;
-	if (!path) {
-		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Status</th><th>Data</th><th>Headers</th><th>Path</th></tr>');
-		for (var i = 0 ; i < history.length ; i++) {
-			
-			entry = history[i];
-			response.write('<tr><td>' + fmt(entry.time) + '</td><td>' + entry.origin + '</td><td>' +
-			
-			(entry.method === 'POST' ? '<a href="post/' + i + '">POST</a>' : entry.method) +
-			
-			'</td><td>' + entry.host + '</td><td>' + entry.status + '</td><td><a href="' + i + '">View</a></td><td><a href="headers/' + i + '">View</a></td>' +
-            '<td>' + entry.path + '</td></tr>');
-		}
-		response.write('</table><a id="clear" href="clear">Clear</a>');
-	} else {
-		if (path === 'clear') {
-			history = [];
-		} else if (path.indexOf('post') === 0) {
-			response.write('<table>');
-			var post = history[path.substr(5)].post;
-			for (var p in post) {
-				response.write('<tr><th>' + p + '</th><td>' + post[p] + '</td></tr>');
-			}
-			response.write('</table>');
-		} else if (path.indexOf('headers') === 0) {
-            response.write('<h3>Request</h3><table>');
-            var headers = history[path.substr(8)].requestHeaders;
-            for (var h in headers) {
-                response.write('<tr><th>' + h + '</th><td>' + headers[h] + '</td></tr>');
-            }
-            response.write('</table>');
-            response.write('<h3>Response</h3><table>');
-            headers = history[path.substr(8)].responseHeaders;
-            for (h in headers) {
-                response.write('<tr><th>' + h + '</th><td>' + headers[h] + '</td></tr>');
-            }
-            response.write('</table>');
-        } else if (history[path]) {
-			response.write('' + history[path].data.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
-		}
-	}
-	response.end('</body>');
-}).listen(PORT_HISTORY, function() {
-	console.log('History available on port ' + PORT_HISTORY + '\n');
-});
+require(__dirname + '/src/history').start(history, PORT_HISTORY);
