@@ -2,7 +2,9 @@ var http = require('http');
 var url = require('url');
 var utils = require(__dirname + '/utils');
 
-exports.start = function (history, port) {
+var history = [];
+
+exports.start = function (port) {
     http.createServer(function (request, response) {
         console.log('History request');
         response.writeHead(200, {'Content-Type': 'text/html'});
@@ -54,4 +56,18 @@ exports.start = function (history, port) {
     }).listen(port, function () {
         console.log('History available on port ' + port + '\n');
     });
+};
+
+exports.log = function (request) {
+    var entry = {
+        time: new Date(),
+        origin: request.connection.remoteAddress,
+        method: request.method,
+        host: request.headers.host,
+        path: url.parse(request.url).path,
+        data: '',
+        requestHeaders: request.headers
+    };
+    history.push(entry);
+    return entry;
 };

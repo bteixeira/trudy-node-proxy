@@ -1,6 +1,7 @@
 ﻿var http = require('http');
 var url = require('url');
 var qs = require('querystring');
+var history = require(__dirname + '/src/history');
 
 var mappings = {
 };
@@ -13,30 +14,18 @@ var mappings = {
 //mappings['frames/js/zal.cc-iframe.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/zal.cc-iframe.js'];
 //mappings['frames/img/sprite.png'] = 				['localhost', 8081, '/creditcard-gateway/frames/img/sprite.png'];
 
-
 var i = 1000;
-
-var history = [];
 
 var server = http.createServer(function(request, response) {
 
-	var entry = {
-		time: new Date(),
-		origin: request.connection.remoteAddress,
-		method: request.method,
-		host: request.headers.host,
-		path: url.parse(request.url).path,
-		data: '',
-        requestHeaders: request.headers
-	};
-	history.push(entry);
+	var entry = history.log(request);
 
 	var n = i++;
 	function log() {
 		Array.prototype.unshift.call(arguments, n + ' ');
 		console.log.apply(null, arguments);
 	}
-	
+
 	request.on('data', function(data) {
 		proxy_request.write(data, 'binary');
 	});
@@ -44,7 +33,6 @@ var server = http.createServer(function(request, response) {
 	request.on('end', function() {
 		proxy_request.end();
 	});
-	
 	
 	log(request.connection.remoteAddress + '\t' + request.method + '\t' + request.headers.host + '\t' + url.parse(request.url).path);
 	if (request.method === 'POST') {
@@ -143,7 +131,7 @@ server.listen(PORT, function() {
 			'This is a local proxy for local people.\nThere\'s nothing for you here.'
 	];
 	var msg = messages[Math.floor(Math.random() * messages.length)];
-	console.log(msg + '\n');
+	console.log('\n' + msg + '\n');
 	console.log('Ready on port ' + PORT + (PORT > 9000 ? ' (over nine thousand)' : ''));
 	var os = require('os');
 	var ifaces = os.networkInterfaces();
@@ -159,4 +147,4 @@ server.listen(PORT, function() {
 });
 
 var PORT_HISTORY = 9002;
-require(__dirname + '/src/history').start(history, PORT_HISTORY);
+history.start(PORT_HISTORY);
