@@ -3,31 +3,25 @@ var url = require('url');
 var qs = require('querystring');
 
 var mappings = {
-
-//	'web/js/jquery-1.7.1.min.js'
-
-//	, 'api/mobile/v2': ['localhost', 8080, '/shop/api/mobile/v2']
-//	, 'kasse/zahlungsart': ['www.zalando.de-local', 8080, '/shop/kasse/zahlungsart']
-//'shop/': ['www.zalando.de-local', 8080, '/shop/']
-//'shop/soft/login': ['www.zalando.de-local', 8080, '/shop/soft/login']
 };
 
-mappings['frames/form'] = 							['localhost', 8081, '/creditcard-gateway/frames/form'];
-mappings['frames/css/pci.css'] =					['localhost', 8081, '/creditcard-gateway/frames/css/pci.css'];
-mappings['frames/js/jquery-1.7.1.min.js'] =	 		['localhost', 8081, '/creditcard-gateway/frames/js/jquery-1.7.1.min.js'];
-mappings['frames/js/jquery.validate.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/jquery.validate.js'];
-mappings['frames/js/jquery.ba-postmessage.js'] =	['localhost', 8081, '/creditcard-gateway/frames/js/jquery.ba-postmessage.js'];
-mappings['frames/js/zal.cc-iframe.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/zal.cc-iframe.js'];
-mappings['frames/img/sprite.png'] = 				['localhost', 8081, '/creditcard-gateway/frames/img/sprite.png'];
+//mappings['frames/form'] = 							['localhost', 8081, '/creditcard-gateway/frames/form'];
+//mappings['frames/css/pci.css'] =					['localhost', 8081, '/creditcard-gateway/frames/css/pci.css'];
+//mappings['frames/js/jquery-1.7.1.min.js'] =	 		['localhost', 8081, '/creditcard-gateway/frames/js/jquery-1.7.1.min.js'];
+//mappings['frames/js/jquery.validate.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/jquery.validate.js'];
+//mappings['frames/js/jquery.ba-postmessage.js'] =	['localhost', 8081, '/creditcard-gateway/frames/js/jquery.ba-postmessage.js'];
+//mappings['frames/js/zal.cc-iframe.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/zal.cc-iframe.js'];
+//mappings['frames/img/sprite.png'] = 				['localhost', 8081, '/creditcard-gateway/frames/img/sprite.png'];
 
-//mappings['api/mobile/v2'] = 	['www.zalando.de-local', 8080, '/api/mobile/v2'];
-
-/* Filters for full dumping (but no changing) */
-full = ['Zahlungsart'];
 
 var i = 1000;
 
-/* shrinks a string to a certain length by taking out enough characters in the middle and replacing them with ellipsis */
+/**
+ * Shrinks a string to a certain length by taking out enough characters in the middle and replacing them with ellipsis
+ * @param what the string to be shrinked
+ * @param length the length to shrink to
+ * @returns {*} ths shrinked string
+ */
 function shrink(what, length) {
 	if (what.length <= length) {
 		return what;
@@ -59,7 +53,7 @@ function fmt(time) {
 	return dateFormat(time, '%H:%M:%S,%l');
 }
 
-history = [];
+var history = [];
 
 var server = http.createServer(function(request, response) {
 
@@ -81,14 +75,10 @@ var server = http.createServer(function(request, response) {
 	}
 	
 	request.on('data', function(data) {
-		//console.log('XXX GOT REQUEST DATA!!!');
-		//console.log(request.headers);	
-		//console.log(data);
 		proxy_request.write(data, 'binary');
 	});
 	
 	request.on('end', function() {
-		//console.log('XXX REQUEST DATA ENDED!!!');
 		proxy_request.end();
 	});
 	
@@ -116,17 +106,8 @@ var server = http.createServer(function(request, response) {
 		options.port = items[1];
 		log('\t\tChanged:\t[' + options.hostname + '] [' + options.port + '] [' + options.path + ']');
 	}
-	/**
-	if (options.hostname === 'www.de-integration.zalando') {
-		options.hostname = 'www.zalando.de-local';
-		console.log('\t\tChanged:\t[' + options.hostname + '] [' + options.port + '] [' + options.path + ']');
-	}
-	/**/
-	
 	options.path = url.parse(request.url).path;
 
-	/**/
-	
 	var re, settings, changed = false;
 	for (m in mappings) {
 		re = new RegExp('.+' + m + '(.*)');
@@ -138,11 +119,8 @@ var server = http.createServer(function(request, response) {
 			log('\t\tChanged:\t[' + options.hostname + '] [' + options.port + '] [' + options.path + ']');
 			options['proxy-connection'] = 'keep-alive';
 			changed = true;
-		} else {
-			//console.log(re + ' did not match ' + options.path);
 		}
 	}
-	/**/
 	options.headers = request.headers;
 	if (changed) {
 		delete options.headers.host;
@@ -151,14 +129,7 @@ var server = http.createServer(function(request, response) {
 		delete options.headers.path;
 		delete options.headers['proxy-connection'];
 	}
-	
-	/**/
-	
-	/*if (!changed) {
-		options.headers = request.headers;
-	}*/
-	//console.log('>>> ', options);
-	
+
 	var proxy_request = http.request(options, function(proxy_response) {
 		var status = proxy_response.statusCode;
 		if (status >= 300 && status < 400 && proxy_response.headers.location) {
@@ -167,51 +138,22 @@ var server = http.createServer(function(request, response) {
 			log('\t\tStatus:\t' + status);
 		}
 		entry.status = status;
-		/*
-		console.log('HEADERS:\n');
-		for (h in res.headers) {
-			if (res.headers.hasOwnProperty(h)) {
-				console.log('\t' + h + ':\t\t' + res.headers[h]);
-			}
-		}
-		 //+ JSON.stringify(res.headers));
-		res.setEncoding('utf8');*/
-		
-		
-		//response.writeHead(200, {'Content-Type': 'text/plain'});
         entry.responseHeaders = proxy_response.headers;
 		response.writeHead(status, proxy_response.headers);
 		
 		proxy_response.on('data', function (chunk) {
-			//log('\t\tData for:\t' + request.headers.host + '\t' + shrink(url.parse(request.url).path, 120));
-			//log('\t\tData for:\t' + request.headers.host);
-			//log('\t\t%%%%%', chunk);
 			var str = chunk.toString();
 			entry.data += str;
-			//log('\t\t%%%%%', str.substr(0, 120));
-			/**/
 			if (str.indexOf('integration') !== -1) {
-				//log('\t\t%%%%%', shrink(str, 120));
 				str = str.replace(/de-integration\.zalando/g, 'zalando.de-local');
-				//log('\t\t%%%%%', str.substr(0, 120));
 				response.write(str);
 				return;
 			}
-			
-			/*
-			for (var i = 0 ; i < full.length ; i++) {
-				if (str.indexOf(full[i]) !== -1) {
-					log('\t\t%%%%% ', str);
-					break;
-				}
-			}
-			/**/
-			
+
 			response.write(chunk, 'binary');
 			
 		});
-		/**/
-		
+
 		proxy_response.on('end', function() {
 			log('\t\t(end.)');
 			response.end();
@@ -224,11 +166,9 @@ var server = http.createServer(function(request, response) {
 		response.end('Error: Proxy could not connect to host (' + request.headers['host'] + ')');
 	});
 	
-	//proxy_request.end();
 });
 
 server.on('connect', function(socket) {
-	//console.log('XXX CONNECT!!!');
 });
 
 var PORT = 9001;
@@ -264,7 +204,6 @@ var historyServer = http.createServer(function(request, response) {
 	response.write('<!DOCTYPE html><head> <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script><script>$(function(){$(\'#clear\').click(function(ev){ev.preventDefault();$.ajax(\'clear\');})})</script><style>td { border: 1px solid gray; } body { white-space: pre; font-family: monospace; } table { width: 100%; } td.wrap {white-space: normal; word-wrap: break-word; } </style></head><body>');
 	var entry;
 	if (!path) {
-		//response.end('hi there -- no path');
 		response.write('<table><tr><th>Time</th><th>Origin</th><th>Method</th><th>Host</th><th>Status</th><th>Data</th><th>Headers</th><th>Path</th></tr>');
 		for (var i = 0 ; i < history.length ; i++) {
 			
@@ -278,8 +217,6 @@ var historyServer = http.createServer(function(request, response) {
 		}
 		response.write('</table><a id="clear" href="clear">Clear</a>');
 	} else {
-		//response.write('hi there -- path is ' + path + ' [' + typeof path + ']');
-		//console.log
 		if (path === 'clear') {
 			history = [];
 		} else if (path.indexOf('post') === 0) {
@@ -303,7 +240,6 @@ var historyServer = http.createServer(function(request, response) {
             }
             response.write('</table>');
         } else if (history[path]) {
-			//response.write('' + history[path].time);
 			response.write('' + history[path].data.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
 		}
 	}
