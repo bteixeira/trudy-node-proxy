@@ -14,39 +14,14 @@ var mappings = {
 //mappings['frames/js/zal.cc-iframe.js'] = 			['localhost', 8081, '/creditcard-gateway/frames/js/zal.cc-iframe.js'];
 //mappings['frames/img/sprite.png'] = 				['localhost', 8081, '/creditcard-gateway/frames/img/sprite.png'];
 
-var i = 1000;
-
 var server = http.createServer(function(request, response) {
 
 	var entry = history.log(request);
 
-	var n = i++;
-	function log() {
-		Array.prototype.unshift.call(arguments, n + ' ');
-		console.log.apply(null, arguments);
-	}
+    var log = nextLogger();
 
     log(request.connection.remoteAddress + '\t' + request.method + '\t' + request.headers.host + '\t' + url.parse(request.url).path);
 
-	request.on('data', function(data) {
-		proxy_request.write(data, 'binary');
-	});
-	
-	request.on('end', function() {
-		proxy_request.end();
-	});
-	
-	if (request.method === 'POST') {
-		var body = '';
-		request.on('data', function (data) {
-			body += data;
-		});
-		request.on('end', function () {
-			var post = qs.parse(body);
-			entry.post = post;
-			log(post);
-		});
-	}
 	var items;
 	var options = {
 		hostname: request.headers.host,
@@ -117,11 +92,29 @@ var server = http.createServer(function(request, response) {
 		response.writeHead(418, {'Content-Type': 'text/plain'});
 		response.end('Error: Proxy could not connect to host (' + request.headers['host'] + ')');
 	});
+
+    request.on('data', function(data) {
+        proxy_request.write(data, 'binary');
+    });
+
+    request.on('end', function() {
+        proxy_request.end();
+    });
+
+    if (request.method === 'POST') {
+        var body = '';
+        request.on('data', function (data) {
+            body += data;
+        });
+        request.on('end', function () {
+            entry.post = qs.parse(body);
+        });
+    }
 	
 });
 
-server.on('connect', function(socket) {
-});
+//server.on('connect', function(socket) {
+//});
 
 var PORT = 9001;
 
